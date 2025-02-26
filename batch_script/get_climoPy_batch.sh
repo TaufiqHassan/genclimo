@@ -8,4 +8,4 @@
 
 source /share/apps/E3SM/conda_envs/base/etc/profile.d/conda.sh
 conda activate <env>
-python <pyclimoDir>/genclimo.py -c <case> -s <start> -e <end> -dir <directory> -dir2 <outDir> -m <model> -v <vars> -t <time>
+python <genclimoDir>/genclimo.py -c <case> -s <start> -e <end> -dir <directory> -dir2 <outDir> -m <model> -v <vars> -t <time>

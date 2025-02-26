@@ -22,7 +22,7 @@ inDirectory = config.get('CMD','inDirectory')
 outDirectory = config.get('CMD','outDirectory')
 model = config.get('CMD','model')
 variables = config.get('CMD','variables')
-pyclimoDir = config.get('CMD','pyclimoDir')
+genclimoDir = config.get('CMD','genclimoDir')
 walltime = config.get('CMD','walltime')
 
 def exec_shell(cmd):
@@ -33,13 +33,13 @@ def exec_shell(cmd):
 if outDirectory==None:
     outDirectory = inDirectory   
 for time in ['ann','sea','mon']:
-    exec_shell(f'cp {pyclimoDir}/batch_script/get_climoPy_batch.sh {outDirectory}/get_climoPy_{time}.sh')
+    exec_shell(f'cp {genclimoDir}/batch_script/get_climoPy_batch.sh {outDirectory}/get_climoPy_{time}.sh')
     with open(outDirectory+'/get_climoPy_'+time+'.sh','r') as file:
         filedata = file.read()
         filedata = filedata.replace('<account>',account)
         filedata = filedata.replace('<partition>',partition)
         filedata = filedata.replace('<env>',env)
-        filedata = filedata.replace('<pyclimoDir>',pyclimoDir)
+        filedata = filedata.replace('<genclimoDir>',genclimoDir)
         filedata = filedata.replace('<case>',case)
         filedata = filedata.replace('<start>',start)
         filedata = filedata.replace('<end>',end)
