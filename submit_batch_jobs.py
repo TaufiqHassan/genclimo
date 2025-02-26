@@ -25,7 +25,7 @@ def exec_shell(cmd):
 if outDirectory==None:
     outDirectory = inDirectory   
 for time in ['ann','sea','mon']:
-    exec_shell(f'cp {genclimoDir}/batch_script/get_climoPy_batch.sh {outDirectory}/get_climoPy_{time}.sh')
+    exec_shell(f'cp {genclimoDir}/src/batch_script/get_climoPy_batch.sh {outDirectory}/get_climoPy_{time}.sh')
     with open(outDirectory+'/get_climoPy_'+time+'.sh','r') as file:
         filedata = file.read()
         filedata = filedata.replace('<account>',account)
