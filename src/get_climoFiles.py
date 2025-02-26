@@ -6,7 +6,7 @@ import multiprocessing as mp
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from utils import shift_time, smean, amean, mmean, get_dir_path
+from src.utils import shift_time, smean, amean, mmean, get_dir_path
 
 
 class get_climo(object):

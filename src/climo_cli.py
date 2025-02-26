@@ -1,6 +1,7 @@
 import time
 import argparse
-from get_climoFiles import get_climo
+
+from src.get_climoFiles import get_climo
 
 def main():
 

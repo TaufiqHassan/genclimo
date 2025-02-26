@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Aug 14 15:26:41 2022
-
-@author: hass877
-"""
-
 import configparser
 from subprocess import Popen, PIPE, STDOUT
 
