@@ -1,2 +1,2 @@
-# genclimo
-Generate climo files for diagnostics tools
+# pyclimo
+Create climo files for diagnostics
