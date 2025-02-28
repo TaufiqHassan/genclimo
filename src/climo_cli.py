@@ -1,6 +1,6 @@
 import time
 import argparse
-from src.get_climoFiles import get_climo
+from src.get_climoFiles import GetClimo
 
 
 def parse_arguments():
@@ -27,7 +27,7 @@ def main():
 
     start_time = time.perf_counter()
 
-    climo_instance = get_climo(
+    climo_instance = GetClimo(
         case=args.case,
         start=args.start,
         path=args.input_dir,
