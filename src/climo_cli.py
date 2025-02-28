@@ -1,38 +1,51 @@
 import time
 import argparse
-
 from src.get_climoFiles import get_climo
 
-def main():
 
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument("-c", help="case name", required=True)
-    parser.add_argument("-s", help="start year", required=True)
-    parser.add_argument("-e", help="end year.", default=None)
-    parser.add_argument("-dir", help="input directory", default=None)
-    parser.add_argument("-dir2", help="climo output directory", default=None)
-    parser.add_argument("-m", help="model name (eam or cam)", default='eam')
-    parser.add_argument("-v", help="variable names", default=None)
-    parser.add_argument("-t", help="time freq (sea=seasonal|mon=monthly)", default=None)
-   
-    args = parser.parse_args()
-    cs = args.c
-    strt = args.s
-    end = args.e
-    path = args.dir
-    path2 = args.dir2
-    tm = args.t
-    model = args.m
-    variable = args.v
-    if path2 == None:
-        path2 = path
-        
-    start = time.perf_counter()
-    gc=get_climo(case=cs,start=strt,path=path,path2=path2,end=end,ts=tm,mod=model)
-    if variable != None:
-        gc.variable=variable
-    gc.get_nc()
-    finish = time.perf_counter()
-    print(f'\nFinished in {round(finish-start, 2)} second(s)')
+def parse_arguments():
+    """Parses command-line arguments."""
+    parser = argparse.ArgumentParser(description="Process climate data.")
+
+    parser.add_argument("-c", "--case", help="Case name", required=True)
+    parser.add_argument("-s", "--start", help="Start year", required=True)
+    parser.add_argument("-e", "--end", help="End year", default=None)
+    parser.add_argument("-indir", "--input_dir", help="Input directory", default=None)
+    parser.add_argument("-outdir", "--output_dir", help="Climo output directory", default=None)
+    parser.add_argument("-m", "--model", help="Model name (eam or cam)", default="eam")
+    parser.add_argument("-v", "--variable", help="Variable names", default=None)
+    parser.add_argument("-t", "--time_freq", help="Time frequency (sea=seasonal | mon=monthly)", default=None)
+
+    return parser.parse_args()
+
+
+def main():
+    """Main function to process climate data."""
+    args = parse_arguments()
+
+    output_dir = args.output_dir if args.output_dir is not None else args.input_dir
+
+    start_time = time.perf_counter()
+
+    climo_instance = get_climo(
+        case=args.case,
+        start=args.start,
+        path=args.input_dir,
+        outpath=output_dir,
+        end=args.end,
+        ts=args.time_freq,
+        mod=args.model,
+    )
+
+    if args.variable is not None:
+        climo_instance.variable = args.variable
+
+    climo_instance.get_nc()
+
+    end_time = time.perf_counter()
+    print(f"\nFinished in {round(end_time - start_time, 2)} second(s)")
+
+
+if __name__ == "__main__":
+    main()
 

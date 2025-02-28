@@ -37,7 +37,9 @@ class get_climo(object):
         
     def make_climo(self):
         self.path = get_dir_path(self.path)
+        print('\nConsidering files in:',str(self.path))
         fname = self.case+'.'+self.mod+'.h0.*.nc'
+        print(fname)
         flist = list(self.path.glob(fname))
         print('Considering files:\n', flist)
         data = xr.open_mfdataset(flist, combine='by_coords')
@@ -97,8 +99,8 @@ class get_climo(object):
             ds=mmean(data)
             ds = ds.rename({'month':'time'})
             self.prs=12
-            self.tags=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-            self.numTags = ['01','02','03','04','05','06','07','08','09','10','11','12']
+            self.tags=['01','02','03','04','05','06','07','08','09','10','11','12']
+            self.numTags = ['01-01','02-02','03-03','04-04','05-05','06-06','07-07','08-08','09-09','10-10','11-11','12-12']
         else:
             print('\nCalculating annual means.')
             ny = int(self.end) - int(self.start) + 1
