@@ -5,7 +5,7 @@ import multiprocessing as mp
 import warnings
 
 from pathlib import Path
-from src.utils import shift_time, smean, amean, mmean, get_dir_path
+from src.utils import shift_time, smean, amean, mmean, get_dir_path, prep_mamxx
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -45,6 +45,9 @@ class GetClimo:
         print("Considering files:\n", flist)
 
         data = xr.open_mfdataset(flist, combine="by_coords")
+        
+        if self.mod == 'scream':
+            data = prep_mamxx(data)
 
         # Extract the simulated years from filenames
         years = []

@@ -106,3 +106,56 @@ def exec_shell(cmd):
     process = Popen(cmd_split, stdout=PIPE, stdin=PIPE, stderr=STDOUT, universal_newlines=True)
     output, _ = process.communicate()
     return output
+
+def prep_mamxx(data):
+    """
+    Pre-process EAMxx outputs to EAM: active when using scream.
+    """
+    tracers = ["Q", "CLDLIQ", "CLDICE", "NUMLIQ", "NUMICE", "RAINQM", "SNOWQM", "NUMRAI", "NUMSNO",
+                "O3", "H2O2", "H2SO4", "SO2", "DMS", "SOAG",
+                "so4_a1", "pom_a1", "soa_a1", "bc_a1", "dst_a1", "ncl_a1", "mom_a1", "num_a1",
+                "so4_a2", "soa_a2", "ncl_a2", "mom_a2", "num_a2",
+                "dst_a3", "ncl_a3", "so4_a3", "bc_a3", "pom_a3", "soa_a3", "mom_a3", "num_a3",
+                "pom_a4", "bc_a4", "mom_a4", "num_a4"
+                ]
+    # Handle dims: add time dim and transpose lev dim
+    for var in data.data_vars:
+        if "_PG2" in var:
+            data[var] = data[var].expand_dims(dim="time").assign_coords(time=data["U"].coords["time"])
+        if "lev" in data[var].dims and "ncol" in data[var].dims:
+            data[var] = data[var].transpose(..., "lev", "ncol")
+
+    if 'ps' in data.variables:
+        data = data.rename({'ps':'PS'})
+        
+    data = data.rename({var: var.replace("nacl", "ncl") for var in data.variables if "nacl" in var})
+    
+    aer_list = ['bc','so4','dst','mom','pom','ncl','soa','num','DMS','SO2','H2SO4']
+    for aer in aer_list:
+        for aval, vname in zip(['a','c'],['aerdepwetis','aerdepwetcw']):
+            for mode in ['1','2','3','4']:
+                try:
+                    var_name = aer + '_' + aval + mode + 'SFWET'
+                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
+                    data = data.assign({var_name: new_var})
+                except:
+                    pass
+        
+        for aval, vname in zip(['a','c'],['deposition_flux_of_interstitial_aerosols','deposition_flux_of_cloud_borne_aerosols']):
+            for mode in ['1','2','3','4']:
+                try:
+                    var_name = aer + '_' + aval + mode + 'DDF'
+                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
+                    data = data.assign({var_name: new_var})
+                except:
+                    pass
+        
+        for aval, vname in zip(['a'],['constituent_fluxes']):
+            for mode in ['1','2','3','4']:
+                try:
+                    var_name = 'SF' + aer + '_' + aval + mode
+                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
+                    data = data.assign({var_name: new_var})
+                except:
+                    pass
+    return data
