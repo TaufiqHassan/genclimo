@@ -120,8 +120,6 @@ def prep_mamxx(data):
                 ]
     # Handle dims: add time dim and transpose lev dim
     for var in data.data_vars:
-        if "_PG2" in var:
-            data[var] = data[var].expand_dims(dim="time").assign_coords(time=data["U"].coords["time"])
         if "lev" in data[var].dims and "ncol" in data[var].dims:
             data[var] = data[var].transpose(..., "lev", "ncol")
 
@@ -158,4 +156,9 @@ def prep_mamxx(data):
                     data = data.assign({var_name: new_var})
                 except:
                     pass
+
+        data = data.rename(
+                {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
+            )
+
     return data
