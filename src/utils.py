@@ -125,6 +125,8 @@ def prep_mamxx(data):
 
     if 'ps' in data.variables:
         data = data.rename({'ps':'PS'})
+    if 'landfrac' in data.variables:
+        data = data.rename({'landfrac':'LANDFRAC'})
         
     data = data.rename({var: var.replace("nacl", "ncl") for var in data.variables if "nacl" in var})
     
