@@ -41,7 +41,7 @@ class GetClimo:
         fname = f"{self.case}.{self.mod}.h0.*.nc"
         print(fname)
 
-        flist = list(Path(self.path).glob(fname))
+        flist = sorted(list(Path(self.path).glob(fname)))
         print("Considering files:\n", flist)
 
         data = xr.open_mfdataset(flist, combine="by_coords")
