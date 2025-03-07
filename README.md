@@ -30,3 +30,6 @@ options:
   -t TIME_FREQ, --time_freq TIME_FREQ
                         Time frequency (sea=seasonal | mon=monthly)
 ```
+
+## Add some examples here 
+
