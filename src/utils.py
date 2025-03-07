@@ -159,6 +159,11 @@ def prep_mamxx(data):
                 except:
                     pass
 
+        # adjust names of additional variables for MAMxx 
+        #    dry and wet size, aerosol water 
+        #    aci diagnostics 
+        #    optical properties 
+            
         data = data.rename(
                 {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
             )
