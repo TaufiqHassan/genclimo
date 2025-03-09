@@ -161,14 +161,32 @@ def prep_mamxx(data):
                     data = data.assign({var_name: new_var})
                 except:
                     pass
-
-        # adjust names of additional variables for MAMxx 
-        #    dry and wet size, aerosol water 
-        #    aci diagnostics 
-        #    optical properties 
+        
+    # dry and wet size, aerosol water
+    for vname, item in zip(['dgnum','dgnumwet','wetdens'],['dgnd_a0','dgnw_a0','wat_a']):
+        for mode in ['1','2','3','4']:
+            var_name = item + mode
+            new_var = data[vname].isel({ "nmodes": int(mode)-1 })
+            data = data.assign({var_name: new_var})
             
-        data = data.rename(
-                {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
-            )
+    # aci diagnostics
+    ccn_vars = ["ccn_0p02", "ccn_0p05", "ccn_0p1", "ccn_0p2", "ccn_0p5", "ccn_1p0"]
+    for i, vname in enumerate(ccn_vars):
+        var_name = 'CCN' + str(i+1)
+        new_var = data[vname]
+        data = data.assign({var_name: new_var})
+    
+    # optical properties
+    data = data.assign(
+    AODVIS=data['aero_tau_sw'].isel(swband=10).sum(dim='lev'),
+    SSAVIS=data['aero_ssa_sw'].isel(swband=10).sum(dim='lev'),
+    AODABS=lambda ds: (ds['aero_tau_sw'].isel(swband=10) - 
+                        (ds['aero_tau_sw'].isel(swband=10) * ds['aero_ssa_sw'].isel(swband=10))
+                      ).sum(dim='lev')
+    )
+            
+    data = data.rename(
+            {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
+        )
 
     return data
