@@ -146,6 +146,8 @@ def prep_mamxx(data):
     rename_dict = {var: var.replace("nacl", "ncl") for var in data.variables if "nacl" in var}
     if 'ps' in data.variables:
         rename_dict.update({'ps': 'PS'})
+    if 'landfrac' in data.variables:
+        rename_dict.update({'landfrac':'LANDFRAC'})
     data = data.rename(rename_dict)
 
     aer_list = ['bc', 'so4', 'dst', 'mom', 'pom', 'ncl', 'soa', 'num', 'DMS', 'SO2', 'H2SO4']
