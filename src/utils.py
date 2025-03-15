@@ -112,95 +112,103 @@ def exec_shell(cmd):
 
 def prep_mamxx(data):
     """
-    Pre-process EAMxx outputs to EAM: active when using scream.
+    Pre-process EAMxx outputs to EAM: active when using SCREAM.
     """
-    tracers = ["Q", "CLDLIQ", "CLDICE", "NUMLIQ", "NUMICE", "RAINQM", "SNOWQM", "NUMRAI", "NUMSNO",
-                "O3", "H2O2", "H2SO4", "SO2", "DMS", "SOAG",
-                "so4_a1", "pom_a1", "soa_a1", "bc_a1", "dst_a1", "ncl_a1", "mom_a1", "num_a1",
-                "so4_a2", "soa_a2", "ncl_a2", "mom_a2", "num_a2",
-                "dst_a3", "ncl_a3", "so4_a3", "bc_a3", "pom_a3", "soa_a3", "mom_a3", "num_a3",
-                "pom_a4", "bc_a4", "mom_a4", "num_a4"
-                ]
-    # Handle dims: add time dim and transpose lev dim
-    for var in data.data_vars:
-        if "lev" in data[var].dims and "ncol" in data[var].dims:
-            data[var] = data[var].transpose(..., "lev", "ncol")
+    tracers = [
+        "Q", "CLDLIQ", "CLDICE", "NUMLIQ", "NUMICE", "RAINQM", "SNOWQM",
+        "NUMRAI", "NUMSNO", "O3", "H2O2", "H2SO4", "SO2", "DMS", "SOAG",
+        "so4_a1", "pom_a1", "soa_a1", "bc_a1", "dst_a1", "ncl_a1", "mom_a1", "num_a1",
+        "so4_a2", "soa_a2", "ncl_a2", "mom_a2", "num_a2",
+        "dst_a3", "ncl_a3", "so4_a3", "bc_a3", "pom_a3", "soa_a3", "mom_a3", "num_a3",
+        "pom_a4", "bc_a4", "mom_a4", "num_a4"
+    ]
 
+    # Define default chunk sizes (adjustable based on dataset size)
+    default_chunks = {
+        "lev": -1,
+        "ncol": -1,
+        "lat": -1,
+        "lon": -1,
+    }
+
+    # Only apply chunking to existing dimensions
+    chunk_dims = {dim: default_chunks[dim] for dim in default_chunks if dim in data.dims}
+    data = data.chunk(chunk_dims)
+
+    # Get available spatial dimensions
+    spatial_dims = [dim for dim in ["ncol", "lat", "lon"] if dim in data.dims]
+
+    # Transpose only existing dimensions
+    if "lev" in data.dims:
+        data = data.transpose(..., "lev", *spatial_dims)
+
+    # Rename variables
+    rename_dict = {var: var.replace("nacl", "ncl") for var in data.variables if "nacl" in var}
     if 'ps' in data.variables:
-        data = data.rename({'ps':'PS'})
-    if 'landfrac' in data.variables:
-        data = data.rename({'landfrac':'LANDFRAC'})
-        
-    data = data.rename({var: var.replace("nacl", "ncl") for var in data.variables if "nacl" in var})
-    
-    aer_list = ['bc','so4','dst','mom','pom','ncl','soa','num','DMS','SO2','H2SO4']
+        rename_dict.update({'ps': 'PS'})
+    data = data.rename(rename_dict)
+
+    aer_list = ['bc', 'so4', 'dst', 'mom', 'pom', 'ncl', 'soa', 'num', 'DMS', 'SO2', 'H2SO4']
+    new_vars = {}
+
+    # Aerosol processing
     for aer in aer_list:
-        for aval, vname in zip(['a','c'],['aerdepwetis','aerdepwetcw']):
-            for mode in ['1','2','3','4']:
-                try:
-                    var_name = aer + '_' + aval + mode + 'SFWET'
-                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
-                    data = data.assign({var_name: new_var})
-                except:
-                    pass
-        
-        for aval, vname in zip(['a','c'],['deposition_flux_of_interstitial_aerosols','deposition_flux_of_cloud_borne_aerosols']):
-            for mode in ['1','2','3','4']:
-                try:
-                    var_name = aer + '_' + aval + mode + 'DDF'
-                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
-                    data = data.assign({var_name: new_var})
-                except:
-                    pass
-        
-        for aval, vname in zip(['a'],['constituent_fluxes']):
-            for mode in ['1','2','3','4']:
-                try:
-                    var_name = 'SF' + aer + '_' + aval + mode
-                    new_var = data[vname][..., tracers.index(aer+'_a' + mode)]
-                    data = data.assign({var_name: new_var})
-                except:
-                    pass
-        
-    # dry and wet size, aerosol water
-    for vname, item in zip(['dgnum','dgnumwet','qaerwat'],['dgnd_a0','dgnw_a0','wat_a']):
-        if vname not in data:
-            print(f"Warning: Variable '{vname}' not found in dataset. Skipping...")
-            continue
-    
-        for mode in ['1','2','3','4']:
-            var_name = item + mode
-            new_var = data[vname].isel({ "nmodes": int(mode)-1 })
-            data = data.assign({var_name: new_var})
-            
-    # aci diagnostics
+        for aval, vname in zip(['a', 'c'], ['aerdepwetis', 'aerdepwetcw']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}SFWET"
+                if vname in data and f"{aer}_a{mode}" in tracers:
+                    new_vars[var_name] = data[vname].isel(
+                        num_phys_constants=tracers.index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a', 'c'], [
+            'deposition_flux_of_interstitial_aerosols',
+            'deposition_flux_of_cloud_borne_aerosols'
+        ]):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}DDF"
+                if vname in data and f"{aer}_a{mode}" in tracers:
+                    new_vars[var_name] = data[vname].isel(
+                        num_phys_constants=tracers.index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a'], ['constituent_fluxes']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"SF{aer}_{aval}{mode}"
+                if vname in data and f"{aer}_a{mode}" in tracers:
+                    new_vars[var_name] = data[vname].isel(
+                        num_phys_constituents=tracers.index(f"{aer}_a{mode}")
+                    )
+
+    # Dry and wet size, aerosol water
+    size_vars = {'dgnum': 'dgnd_a0', 'dgnumwet': 'dgnw_a0', 'qaerwat': 'wat_a'}
+    for vname, item in size_vars.items():
+        if vname in data:
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{item}{mode}"
+                new_vars[var_name] = data[vname].isel(nmodes=int(mode) - 1)
+
+    # ACI diagnostics
     ccn_vars = ["ccn_0p02", "ccn_0p05", "ccn_0p1", "ccn_0p2", "ccn_0p5", "ccn_1p0"]
     for i, vname in enumerate(ccn_vars):
-        if vname not in data:
-            print(f"Warning: Variable '{vname}' not found in dataset. Skipping...")
-            continue
-        
-        var_name = 'CCN' + str(i+1)
-        new_var = data[vname]
-        data = data.assign({var_name: new_var})
-    
-    # optical properties
-    optics_vars = ['aero_tau_sw', 'aero_ssa_sw']
-    missing_vars = [var for var in optics_vars if var not in data]
-    
-    if missing_vars:
-        print(f"Warning: Missing variables {missing_vars}. Skipping assignment.")
-    else:
-        data = data.assign(
-        AODVIS=data['aero_tau_sw'].isel(swband=10).sum(dim='lev'),
-        SSAVIS=data['aero_ssa_sw'].isel(swband=10).sum(dim='lev'),
-        AODABS=lambda ds: (ds['aero_tau_sw'].isel(swband=10) - 
-                            (ds['aero_tau_sw'].isel(swband=10) * ds['aero_ssa_sw'].isel(swband=10))
-                          ).sum(dim='lev')
-        )
-            
-    data = data.rename(
-            {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
-        )
+        if vname in data:
+            new_vars[f'CCN{i+1}'] = data[vname]
+
+    # Optical properties
+    if {'aero_tau_sw', 'aero_ssa_sw'}.issubset(data.variables):
+        new_vars.update({
+            "AODVIS": data['aero_tau_sw'].isel(swband=10).sum(dim='lev'),
+            "SSAVIS": data['aero_ssa_sw'].isel(swband=10).sum(dim='lev'),
+            "AODABS": (
+                data['aero_tau_sw'].isel(swband=10) * (1 - data['aero_ssa_sw'].isel(swband=10))
+            ).sum(dim='lev'),
+        })
+
+    # Assigning all converted variables
+    data.update(new_vars)
+
+    # Rename PG2 variables
+    rename_pg2 = {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
+    data = data.rename(rename_pg2)
 
     return data
