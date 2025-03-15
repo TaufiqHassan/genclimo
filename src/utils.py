@@ -163,7 +163,11 @@ def prep_mamxx(data):
                     pass
         
     # dry and wet size, aerosol water
-    for vname, item in zip(['dgnum','dgnumwet','wetdens'],['dgnd_a0','dgnw_a0','wat_a']):
+    for vname, item in zip(['dgnum','dgnumwet','qaerwat'],['dgnd_a0','dgnw_a0','wat_a']):
+        if vname not in data:
+            print(f"Warning: Variable '{vname}' not found in dataset. Skipping...")
+            continue
+    
         for mode in ['1','2','3','4']:
             var_name = item + mode
             new_var = data[vname].isel({ "nmodes": int(mode)-1 })
@@ -172,18 +176,28 @@ def prep_mamxx(data):
     # aci diagnostics
     ccn_vars = ["ccn_0p02", "ccn_0p05", "ccn_0p1", "ccn_0p2", "ccn_0p5", "ccn_1p0"]
     for i, vname in enumerate(ccn_vars):
+        if vname not in data:
+            print(f"Warning: Variable '{vname}' not found in dataset. Skipping...")
+            continue
+        
         var_name = 'CCN' + str(i+1)
         new_var = data[vname]
         data = data.assign({var_name: new_var})
     
     # optical properties
-    data = data.assign(
-    AODVIS=data['aero_tau_sw'].isel(swband=10).sum(dim='lev'),
-    SSAVIS=data['aero_ssa_sw'].isel(swband=10).sum(dim='lev'),
-    AODABS=lambda ds: (ds['aero_tau_sw'].isel(swband=10) - 
-                        (ds['aero_tau_sw'].isel(swband=10) * ds['aero_ssa_sw'].isel(swband=10))
-                      ).sum(dim='lev')
-    )
+    optics_vars = ['aero_tau_sw', 'aero_ssa_sw']
+    missing_vars = [var for var in optics_vars if var not in data]
+    
+    if missing_vars:
+        print(f"Warning: Missing variables {missing_vars}. Skipping assignment.")
+    else:
+        data = data.assign(
+        AODVIS=data['aero_tau_sw'].isel(swband=10).sum(dim='lev'),
+        SSAVIS=data['aero_ssa_sw'].isel(swband=10).sum(dim='lev'),
+        AODABS=lambda ds: (ds['aero_tau_sw'].isel(swband=10) - 
+                            (ds['aero_tau_sw'].isel(swband=10) * ds['aero_ssa_sw'].isel(swband=10))
+                          ).sum(dim='lev')
+        )
             
     data = data.rename(
             {var: var.replace("_PG2", "") for var in data.variables if "_PG2" in var}
