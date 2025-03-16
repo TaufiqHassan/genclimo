@@ -63,7 +63,10 @@ def smean(data):
     np.testing.assert_allclose(weights.groupby("time.season").sum().values, np.ones(4))
 
     seasons = (data * weights).groupby("time.season").sum(dim="time")
-    seasons['lev'] = data.lev[0].values
+    
+    list_of_lists = [lst if isinstance(lst, list) else [lst] for lst in data.lev.values]
+    lev_data = np.unique(np.concatenate(list_of_lists)).tolist()
+    seasons['lev'] = lev_data
     return retain_attr(data, seasons)
 
 
@@ -77,7 +80,10 @@ def amean(data, years):
     np.testing.assert_allclose(weights.groupby("time.year").sum().values, np.ones(years))
 
     ann = (data * weights).groupby("time.year").sum(dim="time")
-    ann['lev'] = data.lev[0].values
+    
+    list_of_lists = [lst if isinstance(lst, list) else [lst] for lst in data.lev.values]
+    lev_data = np.unique(np.concatenate(list_of_lists)).tolist()
+    ann['lev'] = lev_data
     return retain_attr(data, ann)
 
 
@@ -91,7 +97,10 @@ def mmean(data):
     np.testing.assert_allclose(weights.groupby("time.month").sum().values, np.ones(12))
 
     mon = (data * weights).groupby("time.month").sum(dim="time")
-    mon['lev'] = data.lev[0].values
+    
+    list_of_lists = [lst if isinstance(lst, list) else [lst] for lst in data.lev.values]
+    lev_data = np.unique(np.concatenate(list_of_lists)).tolist()
+    mon['lev'] = lev_data
     return retain_attr(data, mon)
 
 
