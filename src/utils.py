@@ -174,7 +174,7 @@ def prep_mamxx(data):
                 var_name = f"{aer}_{aval}{mode}SFWET"
                 if vname in data and f"{aer}_a{mode}" in tracers:
                     new_vars[var_name] = data[vname].isel(
-                        num_phys_constants=tracers.index(f"{aer}_a{mode}")
+                        num_phys_constituents=tracers.index(f"{aer}_a{mode}")
                     )
 
         for aval, vname in zip(['a', 'c'], [
@@ -185,7 +185,7 @@ def prep_mamxx(data):
                 var_name = f"{aer}_{aval}{mode}DDF"
                 if vname in data and f"{aer}_a{mode}" in tracers:
                     new_vars[var_name] = data[vname].isel(
-                        num_phys_constants=tracers.index(f"{aer}_a{mode}")
+                        num_phys_constituents=tracers.index(f"{aer}_a{mode}")
                     )
 
         for aval, vname in zip(['a'], ['constituent_fluxes']):
@@ -203,17 +203,12 @@ def prep_mamxx(data):
         for gvar in gvars:
             var_name = f"{tag}{gvar}"
             if vname in data and f"{gvar}" in tracers:
-                try:
-                    new_vars[var_name] = data[vname].isel(
-                        num_phys_constants=tracers.index(f"{gvar}")
-                    )
-                except:
-                    new_vars[var_name] = data[vname].isel(
-                        num_phys_constituents=tracers.index(f"{gvar}")
-                    )
+                new_vars[var_name] = data[vname].isel(
+                    num_phys_constituents=tracers.index(f"{gvar}")
+                )
 
     # External forcings (elevated emissions)
-    vname = 'extfrc'
+    vname = 'mam4_external_forcing'
     for extfrc_var in extfrc_lst:
         var_name = f"{extfrc_var}_XFRC"
         if extfrc_var.upper() in gvars:
@@ -223,7 +218,7 @@ def prep_mamxx(data):
                         ext_cnt=extfrc_lst.index(f"{extfrc_var}")
                     )
 
-    vname = 'extfrc_vertsum'
+    vname = 'mam4_external_forcing_vert_sum_dz_weighted'
     for extfrc_var in extfrc_lst:
         var_name = f"{extfrc_var}_CLXF"
         if extfrc_var.upper() in gvars:
@@ -232,6 +227,23 @@ def prep_mamxx(data):
             new_vars[var_name] = data[vname].isel(
                         ext_cnt=extfrc_lst.index(f"{extfrc_var}")
                     )
+    
+    # Cloud chemistry
+    vname = 'dqdt_h2so4_uptake'
+    aer = 'so4'
+    if vname in data:
+        for mode in ['1', '2', '3', '4']:
+            if f"{aer}_a{mode}" in tracers:
+                var_name = f"{aer}_c{mode}AQH2SO4"
+                new_vars[var_name] = data[vname].isel(nmodes=int(mode) - 1)
+
+    vname = 'dqdt_so4_aqueous_chemistry'
+    aer = 'so4'
+    if vname in data:
+        for mode in ['1', '2', '3', '4']:
+            if f"{aer}_a{mode}" in tracers:
+                var_name = f"{aer}_c{mode}AQSO4"
+                new_vars[var_name] = data[vname].isel(nmodes=int(mode) - 1)
 
     # Dry and wet size, aerosol water
     size_vars = {'dgnum': 'dgnd_a0', 'dgnumwet': 'dgnw_a0', 'qaerwat': 'wat_a'}
@@ -261,7 +273,7 @@ def prep_mamxx(data):
     data.update(new_vars)
 
     # Rename PG2 variables
-    rename_pg2 = {var: var.replace("_pg2", "") for var in data.variables if "_pg2" in var}
+    rename_pg2 = {var: var.replace("pg2", "") for var in data.variables if "pg2" in var}
     data = data.rename(rename_pg2)
 
     return data
