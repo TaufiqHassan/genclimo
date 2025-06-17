@@ -273,7 +273,12 @@ def prep_mamxx(data):
     data.update(new_vars)
 
     # Rename PG2 variables
-    rename_pg2 = {var: var.replace("pg2", "") for var in data.variables if "pg2" in var}
+    rename_pg2 = {
+        var: var.replace("_pg2", "").replace("pg2", "")
+        for var in data.variables
+        if "pg2" in var
+    }
+    
     data = data.rename(rename_pg2)
 
     return data
