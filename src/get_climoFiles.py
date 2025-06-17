@@ -23,6 +23,7 @@ class GetClimo:
         self.prs = kwargs.get("prs", 1)
         self.tags = kwargs.get("tags", ["ANN"])
         self.numTags = kwargs.get("numTags", ["01-12"])
+        self.static_vars = kwargs.get("static_vars", None)
 
     @property
     def variable(self):
@@ -70,6 +71,13 @@ class GetClimo:
             data = data.assign_coords(time=corrected_time)
 
         data = data.sel(time=slice(str(self.start), str(self.end)))
+
+        # Keeping the static vars
+        self.static_vars = {
+            var: data[var]
+            for var in data
+            if "time" not in data[var].dims and data[var].dtype in [np.float32, np.float64]
+        }
 
         if self._var is None:
             print("\nSelected all variables.")
@@ -123,17 +131,24 @@ class GetClimo:
             self.prs = 1
             self.tags = ["ANN"]
             self.numTags = ["01-12"]
+        
+        # Attach static vars back
+        ds = ds.assign(self.static_vars)
 
         return ds
 
     def get_nc(self):
         ds = self.apply_means()
-        processes = []
 
         for i in range(self.prs):
-            p = mp.Process(target=self.to_nc, args=(i, self.tags[i], self.numTags[i], ds, self.ts))
-            p.start()
-            processes.append(p)
+            self.to_nc(i, self.tags[i], self.numTags[i], ds, self.ts)
 
-        for process in processes:
-            process.join()
+        # processes = []
+
+        # for i in range(self.prs):
+        #     p = mp.Process(target=self.to_nc, args=(i, self.tags[i], self.numTags[i], ds, self.ts))
+        #     p.start()
+        #     processes.append(p)
+
+        # for process in processes:
+        #     process.join()
