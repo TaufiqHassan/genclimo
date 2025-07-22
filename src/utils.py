@@ -131,7 +131,7 @@ def prep_mamxx(data):
         "dst_a3", "ncl_a3", "so4_a3", "bc_a3", "pom_a3", "soa_a3", "mom_a3", "num_a3",
         "pom_a4", "bc_a4", "mom_a4", "num_a4"
     ]
-    
+
     gvars = ['SO2', 'DMS', 'H2SO4', 'SOAG']
     
     extfrc_lst = ["so2",    "so4_a1", "so4_a2", "pom_a4", "bc_a4",
@@ -195,7 +195,39 @@ def prep_mamxx(data):
                     new_vars[var_name] = data[vname].isel(
                         num_phys_constituents=tracers.index(f"{aer}_a{mode}")
                     )
-                    
+
+        for aval, vname in zip(['a'], ['mam4_microphysics_tendency_condensation_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}_sfgaex1"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a'], ['mam4_microphysics_tendency_coagulation_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}_sfcoag1"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a'], ['mam4_microphysics_tendency_nucleation_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}_sfnnuc1"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a','c'], ['mam4_microphysics_tendency_renaming_vert_sum_dp_weighted','mam4_microphysics_tendency_renaming_cloud_borne_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"{aer}_{aval}{mode}_sfgaex2"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
     # Gas-species
     vnames = ['aerdepwetis','deposition_flux_of_interstitial_aerosols','constituent_fluxes']
     tags = ['WD_','DF_','SF']
