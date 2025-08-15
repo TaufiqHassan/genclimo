@@ -132,6 +132,14 @@ def prep_mamxx(data):
         "pom_a4", "bc_a4", "mom_a4", "num_a4"
     ]
 
+    MWs = {'num':1.0074, 'bc':12.011, 'pom':12.011, 'H2O2':34.0136, 
+           'O3':47.9982, 'ncl': 58.442468, 'DMS':62.1324, 'SO2':64.0648, 
+           'H2SO4':98.0784, 'so4':115.10734, 'dst':135.064039, 
+           'mom':250092.672, 'SOAG':12.011, 'soa':12.011
+           }
+    
+    mwdry = 28.966
+
     gvars = ['SO2', 'DMS', 'H2SO4', 'SOAG']
     
     extfrc_lst = ["so2",    "so4_a1", "so4_a2", "pom_a4", "bc_a4",
@@ -169,6 +177,7 @@ def prep_mamxx(data):
 
     # Aerosol processing
     for aer in aer_list:
+        micFact = MWs[aer] / mwdry
         for aval, vname in zip(['a', 'c'], ['aerdepwetis', 'aerdepwetcw']):
             for mode in ['1', '2', '3', '4']:
                 var_name = f"{aer}_{aval}{mode}SFWET"
@@ -202,7 +211,7 @@ def prep_mamxx(data):
                 if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
                     new_vars[var_name] = data[vname].isel(
                         num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
-                    )
+                    ) * micFact
 
         for aval, vname in zip(['a'], ['mam4_microphysics_tendency_coagulation_vert_sum_dp_weighted']):
             for mode in ['1', '2', '3', '4']:
@@ -210,7 +219,7 @@ def prep_mamxx(data):
                 if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
                     new_vars[var_name] = data[vname].isel(
                         num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
-                    )
+                    ) * micFact
 
         for aval, vname in zip(['a'], ['mam4_microphysics_tendency_nucleation_vert_sum_dp_weighted']):
             for mode in ['1', '2', '3', '4']:
@@ -218,7 +227,7 @@ def prep_mamxx(data):
                 if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
                     new_vars[var_name] = data[vname].isel(
                         num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
-                    )
+                    ) * micFact
 
         for aval, vname in zip(['a','c'], ['mam4_microphysics_tendency_renaming_vert_sum_dp_weighted','mam4_microphysics_tendency_renaming_cloud_borne_vert_sum_dp_weighted']):
             for mode in ['1', '2', '3', '4']:
@@ -226,18 +235,25 @@ def prep_mamxx(data):
                 if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
                     new_vars[var_name] = data[vname].isel(
                         num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
-                    )
+                    ) * micFact
 
     # Gas-species
-    vnames = ['aerdepwetis','deposition_flux_of_interstitial_aerosols','constituent_fluxes']
-    tags = ['WD_','DF_','SF']
+    vnames = ['aerdepwetis','deposition_flux_of_interstitial_aerosols','constituent_fluxes',
+                'mam4_microphysics_tendency_condensation_vert_sum_dp_weighted',
+                'mam4_microphysics_tendency_nucleation_vert_sum_dp_weighted']
+    tags = ['WD_','DF_','SF','_sfgaex1','_sfnnuc1']
     for vname, tag in zip(vnames,tags):
         for gvar in gvars:
             var_name = f"{tag}{gvar}"
             if vname in data and f"{gvar}" in tracers:
-                new_vars[var_name] = data[vname].isel(
-                    num_phys_constituents=tracers.index(f"{gvar}")
-                )
+                try:
+                    new_vars[var_name] = data[vname].isel(
+                        num_phys_constituents=tracers.index(f"{gvar}")
+                    )
+                except:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{gvar}")
+                    )
 
     # External forcings (elevated emissions)
     vname = 'mam4_external_forcing'
