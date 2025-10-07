@@ -237,6 +237,22 @@ def prep_mamxx(data):
                         num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
                     ) * micFact
 
+        for aval, vname in zip(['a'], ['mam4_microphysics_tendency_gas_phase_chemistry_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"GS_{aer}_{aval}{mode}"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
+        for aval, vname in zip(['a'], ['mam4_microphysics_tendency_aqueous_chemistry_vert_sum_dp_weighted']):
+            for mode in ['1', '2', '3', '4']:
+                var_name = f"AQ_{aer}_{aval}{mode}"
+                if vname in data and f"{aer}_a{mode}" in tracers[-31:]:
+                    new_vars[var_name] = data[vname].isel(
+                        num_gas_aerosol_constituents=tracers[-31:].index(f"{aer}_a{mode}")
+                    )
+
     # Gas-species
     vnames = ['aerdepwetis','deposition_flux_of_interstitial_aerosols','constituent_fluxes',
                 'mam4_microphysics_tendency_condensation_vert_sum_dp_weighted',
